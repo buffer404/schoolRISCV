@@ -13,7 +13,7 @@
 `include "sr_cpu.vh"
 
 `ifndef SIMULATION_CYCLES
-    `define SIMULATION_CYCLES 120
+    `define SIMULATION_CYCLES 30
 `endif
 
 module sm_testbench;
@@ -35,7 +35,7 @@ module sm_testbench;
         .clkDivide ( 4'b0    ),
         .clkEnable ( 1'b1    ),
         .clk       ( cpuClk  ),
-        .regAddr   ( 5'b0    ),
+        .regAddr   ( 32'b0    ),
         .regData   (         )
     );
 
@@ -77,17 +77,17 @@ module sm_testbench;
         reg [31:0] immU;
 
     begin
-        cmdOp = sm_top.sm_cpu.cmdOp;
-        rd    = sm_top.sm_cpu.rd;
-        cmdF3 = sm_top.sm_cpu.cmdF3;
-        rs1   = sm_top.sm_cpu.rs1;
-        rs2   = sm_top.sm_cpu.rs2;
-        cmdF7 = sm_top.sm_cpu.cmdF7;
-        immI  = sm_top.sm_cpu.immI;
-        immB  = sm_top.sm_cpu.immB;
-        immU  = sm_top.sm_cpu.immU;
+        cmdOp = sm_top.sm_cpu.decode.cmdOpW;
+        rd    = sm_top.sm_cpu.decode.rd_o;
+        cmdF3 = sm_top.sm_cpu.decode.cmdOpW;
+        rs1   = sm_top.sm_cpu.decode.rs1W;
+        rs2   = sm_top.sm_cpu.decode.rs2W;
+        cmdF7 = sm_top.sm_cpu.decode.cmdF7W;
+        immI  = sm_top.sm_cpu.decode.immI_o;
+        immB  = sm_top.sm_cpu.decode.immBW;
+        immU  = sm_top.sm_cpu.decode.immU_o;
 
-        $write("   ");
+        $write("  $%1d  ",cmdOp);
         casez( { cmdF7, cmdF3, cmdOp } )
             default :                                $write ("new/unknown");
             { `RVF7_ADD,  `RVF3_ADD,  `RVOP_ADD  } : $write ("add   $%1d, $%1d, $%1d", rd, rs1, rs2);
@@ -112,7 +112,7 @@ module sm_testbench;
     always @ (posedge clk)
     begin
         $write ("%5d  pc = %2h instr = %h   a0 = %1d", 
-                  cycle, sm_top.sm_cpu.pc, sm_top.sm_cpu.instr, sm_top.sm_cpu.rf.rf[10]);
+                  cycle, sm_top.sm_cpu.fetch.pc_o, sm_top.sm_cpu.fetch.instr_o, sm_top.sm_cpu.sm_register_file.rf[10]);
 
         disasmInstr();
 

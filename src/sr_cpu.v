@@ -19,214 +19,196 @@ module sr_cpu
     output  [31:0]  imAddr,     // instruction memory address
     input   [31:0]  imData      // instruction memory data
 );
-    //control wires
-    wire        aluZero;
-    wire        pcSrc;
-    wire        regWrite;
-    wire        aluSrc;
-    wire        wdSrc;
-    wire  [2:0] aluControl;
+    //fetch wires
+    wire [31:0] pc_f;
+    wire [31:0] pc_w;
 
-    //instruction decode wires
-    wire [ 6:0] cmdOp;
-    wire [ 4:0] rd;
-    wire [ 2:0] cmdF3;
-    wire [ 4:0] rs1;
-    wire [ 4:0] rs2;
-    wire [ 6:0] cmdF7;
-    wire [31:0] immI;
-    wire [31:0] immB;
-    wire [31:0] immU;
+    wire [31:0] instr_fd;
+    wire [31:0] pc_fd;
+    wire [31:0] pcPlus4_fd;
 
-    //program counter
-    wire [31:0] pc;
-    wire [31:0] pcBranch = pc + immB;
-    wire [31:0] pcPlus4  = pc + 4;
-    wire [31:0] pcNext   = pcSrc ? pcBranch : pcPlus4;
-    sm_register r_pc(clk ,rst_n, pcNext, pc);
+    //decode wires
+    wire        wdSrc_de;
+    wire        regWrite_de;
+    wire        branch_de;
+    wire [2:0]  aluControl_de;
+    wire        aluSrc_de;
+    wire        condZero_de;
 
-    //program memory access
-    assign imAddr = pc >> 2;
-    wire [31:0] instr = imData;
+    wire [ 4:0] rs1_de;
+    wire [ 4:0] rs2_de;
+    wire [ 4:0] rd_de;
+    wire [31:0] immI_de;
+    wire [31:0] immU_de;
 
-    //instruction decode
-    sr_decode id (
-        .instr      ( instr        ),
-        .cmdOp      ( cmdOp        ),
-        .rd         ( rd           ),
-        .cmdF3      ( cmdF3        ),
-        .rs1        ( rs1          ),
-        .rs2        ( rs2          ),
-        .cmdF7      ( cmdF7        ),
-        .immI       ( immI         ),
-        .immB       ( immB         ),
-        .immU       ( immU         ) 
-    );
+    wire [31:0] pcBranch_de;
+    wire [31:0] pcPlus4_de;
 
-    //register file
-    wire [31:0] rd0;
+
+    wire [31:0] srcA;
+    wire [31:0] srcB;
     wire [31:0] rd1;
     wire [31:0] rd2;
-    wire [31:0] wd3;
 
-    sm_register_file rf (
-        .clk        ( clk          ),
-        .a0         ( regAddr      ),
-        .a1         ( rs1          ),
-        .a2         ( rs2          ),
-        .a3         ( rd           ),
-        .rd0        ( rd0          ),
-        .rd1        ( rd1          ),
-        .rd2        ( rd2          ),
-        .wd3        ( wd3          ),
-        .we3        ( regWrite     )
+    //execute wires
+    wire        wdSrc_ew;
+    wire        regWrite_ew;
+    wire        branch_ew;
+    wire        condZero_ew;
+    wire        aluZero_ew;
+
+    wire [31:0] aluResult_ew;
+
+    wire [ 4:0] rd_ew;
+    wire [31:0] immU_ew;    
+
+    wire [31:0] pcBranch_ew;
+    wire [31:0] pcPlus4_ew;
+
+    //writeback wires
+    wire        regWrite_wf;
+    wire [ 4:0] rd_wf;
+    wire [31:0] result_wf;
+
+    wire freeze;
+
+    fetch fetch(
+        .clk(clk),
+        .freeze(freeze),
+        .pc_i(pc_f),
+        .instr_o(instr_fd),
+        .pc_o(pc_fd),
+        .pcPlus4_o(pcPlus4_fd)
     );
 
-    //debug register access
-    assign regData = (regAddr != 0) ? rd0 : pc;
+    decode decode(
+        .clk(clk),
+        .instr_i(instr_fd),
+        .pc_i(pc_fd),
+        .pcPlus4_i(pcPlus4_fd),
 
-    //alu
-    wire [31:0] srcB = aluSrc ? immI : rd2;
-    wire [31:0] aluResult;
+        .wdSrc_o(wdSrc_de),
+        .regWrite_o(regWrite_de),
+        .branch_o(branch_de),
+        .aluControl_o(aluControl_de),
+        .aluSrc_o(aluSrc_de),
+        .condZero_o(condZero_de),
 
-    sr_alu alu (
-        .srcA       ( rd1          ),
-        .srcB       ( srcB         ),
-        .oper       ( aluControl   ),
-        .zero       ( aluZero      ),
-        .result     ( aluResult    ) 
+        .rs1_o(rs1_de),
+        .rs2_o(rs2_de),
+        .rd_o(rd_de),
+        .immI_o(immI_de),
+        .immU_o(immU_de),
+
+        .pcBranch_o(pcBranch_de),
+        .pcPlus4_o(pcPlus4_de)
     );
 
-    assign wd3 = wdSrc ? immU : aluResult;
+    execute execute(
+        .clk(clk),
 
-    //control
-    sr_control sm_control (
-        .cmdOp      ( cmdOp        ),
-        .cmdF3      ( cmdF3        ),
-        .cmdF7      ( cmdF7        ),
-        .aluZero    ( aluZero      ),
-        .pcSrc      ( pcSrc        ),
-        .regWrite   ( regWrite     ),
-        .aluSrc     ( aluSrc       ),
-        .wdSrc      ( wdSrc        ),
-        .aluControl ( aluControl   ) 
+        .wdSrc_i(wdSrc_de),
+        .regWrite_i(regWrite_de),
+        .branch_i(branch_de),
+        .condZero_i(condZero_de),
+        .aluControl_i(aluControl_de),
+        .aluSrc_i(aluSrc_de),
+
+        .srcA_i(srcA),
+        .srcB_i(srcB),
+        .rd_i(rd_de),
+        .immI_i(immI_de),
+        .immU_i(immU_de),
+
+        .pcBranch_i(pcBranch_de),
+        .pcPlus4_i(pcPlus4_de),
+
+        .wdSrc_o(wdSrc_ew),
+        .regWrite_o(regWrite_ew),
+        .branch_o(branch_ew),
+        .condZero_o(condZero_ew),
+        .aluZero_o(aluZero_ew),
+
+        .aluResult_o(aluResult_ew),
+
+        .rd_o(rd_ew),
+        .immU_o(immU_ew),    
+
+        .pcBranch_o(pcBranch_ew),
+        .pcPlus4_o(pcPlus4_ew)
     );
 
-endmodule
+    writeback writeback(
 
-module sr_decode
-(
-    input      [31:0] instr,
-    output     [ 6:0] cmdOp,
-    output     [ 4:0] rd,
-    output     [ 2:0] cmdF3,
-    output     [ 4:0] rs1,
-    output     [ 4:0] rs2,
-    output     [ 6:0] cmdF7,
-    output reg [31:0] immI,
-    output reg [31:0] immB,
-    output reg [31:0] immU 
-);
-    assign cmdOp = instr[ 6: 0];
-    assign rd    = instr[11: 7];
-    assign cmdF3 = instr[14:12];
-    assign rs1   = instr[19:15];
-    assign rs2   = instr[24:20];
-    assign cmdF7 = instr[31:25];
+        .clk(clk),
+        .regWrite_i(regWrite_ew),
+        .wdSrc_i(wdSrc_ew),
+        .rd_i(rd_ew),
+        .immU_i(immU_ew),  
+        .aluResult_i(aluResult_ew),
 
-    // I-immediate
-    always @ (*) begin
-        immI[10: 0] = instr[30:20];
-        immI[31:11] = { 21 {instr[31]} };
-    end
+        .aluZero_i(aluZero_ew),
+        .condZero_i(condZero_ew),                 
+        .branch_i(branch_ew),
 
-    // B-immediate
-    always @ (*) begin
-        immB[    0] = 1'b0;
-        immB[ 4: 1] = instr[11:8];
-        immB[10: 5] = instr[30:25];
-        immB[   11] = instr[7];
-        immB[31:12] = { 20 {instr[31]} };
-    end
+        .pcBranch_i(pcBranch_ew),
+        .pcPlus4_i(pcPlus4_ew),
 
-    // U-immediate
-    always @ (*) begin
-        immU[11: 0] = 12'b0;
-        immU[31:12] = instr[31:12];
-    end
+        .regWrite_o(regWrite_wf),
+        .rd_o(rd_wf),     
+        .result_o(result_wf),
+        .newPC_o(pc_w)
 
-endmodule
+    );
 
-module sr_control
-(
-    input     [ 6:0] cmdOp,
-    input     [ 2:0] cmdF3,
-    input     [ 6:0] cmdF7,
-    input            aluZero,
-    output           pcSrc, 
-    output reg       regWrite, 
-    output reg       aluSrc,
-    output reg       wdSrc,
-    output reg [2:0] aluControl
-);
-    reg          branch;
-    reg          condZero;
-    assign pcSrc = branch & (aluZero == condZero);
+    sm_register_file sm_register_file(
+        .clk(clk),
+        .a1(rs1_de),
+        .a2(rs2_de),
+        .a3(rd_wf),
+        .rd1(rd1),
+        .rd2(rd2),
+        .wd3(result_wf),
+        .we3(regWrite_wf)
+    );  
 
-    always @ (*) begin
-        branch      = 1'b0;
-        condZero    = 1'b0;
-        regWrite    = 1'b0;
-        aluSrc      = 1'b0;
-        wdSrc       = 1'b0;
-        aluControl  = `ALU_ADD;
 
-        casez( {cmdF7, cmdF3, cmdOp} )
-            { `RVF7_ADD,  `RVF3_ADD,  `RVOP_ADD  } : begin regWrite = 1'b1; aluControl = `ALU_ADD;  end
-            { `RVF7_OR,   `RVF3_OR,   `RVOP_OR   } : begin regWrite = 1'b1; aluControl = `ALU_OR;   end
-            { `RVF7_SRL,  `RVF3_SRL,  `RVOP_SRL  } : begin regWrite = 1'b1; aluControl = `ALU_SRL;  end
-            { `RVF7_SLTU, `RVF3_SLTU, `RVOP_SLTU } : begin regWrite = 1'b1; aluControl = `ALU_SLTU; end
-            { `RVF7_SUB,  `RVF3_SUB,  `RVOP_SUB  } : begin regWrite = 1'b1; aluControl = `ALU_SUB;  end
+    conflict_prevention conflict_prevention(
+        .clk(clk),
+        .start_pc(imAddr),
 
-            { `RVF7_ANY,  `RVF3_ADDI, `RVOP_ADDI } : begin regWrite = 1'b1; aluSrc = 1'b1; aluControl = `ALU_ADD; end
-            { `RVF7_ANY,  `RVF3_ANY,  `RVOP_LUI  } : begin regWrite = 1'b1; wdSrc  = 1'b1; end
+        .rd1(rd1),
+        .rd2(rd2),
 
-            { `RVF7_ANY,  `RVF3_BEQ,  `RVOP_BEQ  } : begin branch = 1'b1; condZero = 1'b1; aluControl = `ALU_SUB; end
-            { `RVF7_ANY,  `RVF3_BNE,  `RVOP_BNE  } : begin branch = 1'b1; aluControl = `ALU_SUB; end
-        endcase
-    end
-endmodule
+        .rs1(rs1_de),
+        .rs2(rs2_de),
 
-module sr_alu
-(
-    input  [31:0] srcA,
-    input  [31:0] srcB,
-    input  [ 2:0] oper,
-    output        zero,
-    output reg [31:0] result
-);
-    always @ (*) begin
-        case (oper)
-            default   : result = srcA + srcB;
-            `ALU_ADD  : result = srcA + srcB;
-            `ALU_OR   : result = srcA | srcB;
-            `ALU_SRL  : result = srcA >> srcB [4:0];
-            `ALU_SLTU : result = (srcA < srcB) ? 1 : 0;
-            `ALU_SUB : result = srcA - srcB;
-        endcase
-    end
+        .regWrite(regWrite_ew),
+        .aluResult(aluResult_ew),
+        .immU(immU_ew),
+        .wdSrc(wdSrc_ew),
+        .rd(rd_ew),
 
-    assign zero   = (result == 0);
+        .freeze(freeze),
+        .branch(branch_de),
+        .pcPlus4(pcPlus4_fd),
+        .pcBranch(pc_w),
+
+
+        .pcTarget(pc_f),
+        .srcA(srcA),
+        .srcB(srcB)
+    );
+
+
 endmodule
 
 module sm_register_file
 (
     input         clk,
-    input  [ 4:0] a0,
     input  [ 4:0] a1,
     input  [ 4:0] a2,
     input  [ 4:0] a3,
-    output [31:0] rd0,
     output [31:0] rd1,
     output [31:0] rd2,
     input  [31:0] wd3,
@@ -234,10 +216,79 @@ module sm_register_file
 );
     reg [31:0] rf [31:0];
 
-    assign rd0 = (a0 != 0) ? rf [a0] : 32'b0;
     assign rd1 = (a1 != 0) ? rf [a1] : 32'b0;
     assign rd2 = (a2 != 0) ? rf [a2] : 32'b0;
 
     always @ (posedge clk)
         if(we3) rf [a3] <= wd3;
+endmodule
+
+module conflict_prevention
+(
+    input           clk,
+
+    input [31:0]    start_pc,
+
+    input [31:0]    rd1,
+    input [31:0]    rd2,
+
+    input [ 4:0]    rs1,
+    input [ 4:0]    rs2,
+
+    input           regWrite,
+    input [31:0]    aluResult,
+    input [31:0]    immU,
+    input           wdSrc,
+    input [ 4:0]    rd,
+
+    input           branch,
+    input [31:0]    pcBranch,
+    input [31:0]    pcPlus4,
+
+    output reg          freeze,
+    output reg [31:0]   pcTarget,
+
+    output [31:0]   srcA,
+    output [31:0]   srcB
+);
+
+    reg [1:0] state = 2'b0;
+    reg       start = 1;
+
+    initial begin
+            freeze <= 0;
+            pcTarget <= 32'b0;
+    end
+
+    always @ (negedge clk) begin
+        if (start == 1 ) begin
+            freeze <= 0;
+            pcTarget <= 32'b0;
+            start <= 0;
+        end    
+        else 
+            case (state)
+                2'b00 : begin
+                            if (branch) begin
+                                state <= 1;
+                                freeze <= 1;
+                            end
+                            else pcTarget <= pcPlus4;
+                        end
+                2'b01 : state <= 2;
+                2'b10 : state <= 3;
+                2'b11 : begin 
+                            state <= 0;
+                            freeze <= 1;
+                        end
+            endcase    
+    end    
+
+    //assign pcTarget = !init ? (branch ? state === 2'b11 ? pcBranch : 32'bx : pcPlus4) : init == 2'b01 ? pcPlus4 : 32'b0;
+    // assign pcBranch = init == 2'b00 ? 32'b1 : 32'b0;
+
+    //data conflict
+    assign srcA = (rs1 == rd1 && regWrite) ? (wdSrc ? aluResult : immU) : rd1;
+    assign srcB = (rs2 == rd2 && regWrite) ? (wdSrc ? aluResult : immU) : rd2;
+
 endmodule
