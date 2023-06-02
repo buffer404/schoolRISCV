@@ -253,7 +253,7 @@ module conflict_prevention
 );
 
     reg [1:0] state = 2'b0;
-    reg       start = 1;
+    reg [1:0] start = 2'b11;
 
     initial begin
             freeze <= 0;
@@ -261,11 +261,18 @@ module conflict_prevention
     end
 
     always @ (negedge clk) begin
-        if (start == 1 ) begin
+        if (start == 3 ) begin
+            start <= 2;
+        end  
+        else if (start == 2) begin
             freeze <= 0;
-            pcTarget <= 32'b0;
-            start <= 0;
-        end    
+            pcTarget <= pcPlus4;
+            start <= 1;
+        end   
+        // else if (start == 1) begin
+        //     pcTarget <= pcPlus4;
+        //     start <= 0;
+        // end
         else 
             case (state)
                 2'b00 : begin

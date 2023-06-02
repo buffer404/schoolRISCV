@@ -13,7 +13,7 @@
 `include "sr_cpu.vh"
 
 `ifndef SIMULATION_CYCLES
-    `define SIMULATION_CYCLES 30
+    `define SIMULATION_CYCLES 15
 `endif
 
 module sm_testbench;
