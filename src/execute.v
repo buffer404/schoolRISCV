@@ -19,19 +19,18 @@ module execute(
     input [31:0]        pcBranch_i,
     input [31:0]        pcPlus4_i,
 
-    output reg          wdSrc_o,
-    output reg          regWrite_o,
-    output reg          branch_o,
-    output reg          condZero_o,
-    output reg          aluZero_o,
+    output          wdSrc_o,
+    output          regWrite_o,
+    output          branch_o,
+    output          condZero_o,
+    output          aluZero_o,
+    output [31:0]   aluResult_o,
 
-    output reg [31:0]   aluResult_o,
+    output [ 4:0]   rd_o,
+    output [31:0]   immU_o,    
 
-    output reg [ 4:0]   rd_o,
-    output reg [31:0]   immU_o,    
-
-    output reg [31:0]   pcBranch_o,
-    output reg [31:0]   pcPlus4_o
+    output [31:0]   pcBranch_o,
+    output [31:0]   pcPlus4_o
 );
 
     reg         wdSrcR;
@@ -80,18 +79,29 @@ module execute(
         pcPlus4R    <= pcPlus4_i;
     end    
 
-    always @ (negedge clk) begin
-        wdSrc_o     <= wdSrcR;
-        regWrite_o  <= regWriteR;
-        branch_o    <= branchR;
-        condZero_o  <= condZeroR;
-        aluZero_o   <= aluZeroW;
-        aluResult_o <= aluResultW;
-        rd_o        <= rdR;
-        immU_o      <= immUR;
-        pcBranch_o  <= pcBranchR;
-        pcPlus4_o   <= pcPlus4R;
-    end 
+    // always @ (negedge clk) begin
+    //     wdSrc_o     <= wdSrcR;
+    //     regWrite_o  <= regWriteR;
+    //     branch_o    <= branchR;
+    //     condZero_o  <= condZeroR;
+    //     aluZero_o   <= aluZeroW;
+    //     aluResult_o <= aluResultW;
+    //     rd_o        <= rdR;
+    //     immU_o      <= immUR;
+    //     pcBranch_o  <= pcBranchR;
+    //     pcPlus4_o   <= pcPlus4R;
+    // end 
+
+    assign   wdSrc_o     = wdSrcR;
+    assign   regWrite_o  = regWriteR;
+    assign   branch_o    = branchR;
+    assign   condZero_o  = condZeroR;
+    assign   aluZero_o   = aluZeroW;
+    assign   aluResult_o = aluResultW;
+    assign   rd_o        = rdR;
+    assign   immU_o      = immUR;
+    assign   pcBranch_o  = pcBranchR;
+    assign   pcPlus4_o   = pcPlus4R;
 
 
 endmodule

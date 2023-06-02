@@ -1,7 +1,6 @@
 
 module fetch(
     input clk,
-    input freeze,
     input [31:0] pc_i,
     output [31:0] instr_o,
     output [31:0] pc_o,
@@ -18,7 +17,7 @@ module fetch(
     sm_rom reset_rom(pcW, dataW);
 
     always @ (posedge clk) begin
-        if (!freeze) pcR <= pc_i;
+        pcR <= pc_i;
     end    
 
     assign instr_o = dataW;

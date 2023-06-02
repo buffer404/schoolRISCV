@@ -16,10 +16,10 @@ module writeback(
     input [31:0]        pcBranch_i,
     input [31:0]        pcPlus4_i,
 
-    output reg          regWrite_o,
-    output reg [ 4:0]   rd_o,     
-    output reg [31:0]   result_o,
-    output reg [31:0]   newPC_o 
+    output          regWrite_o,
+    output [ 4:0]   rd_o,     
+    output [31:0]   result_o,
+    output [31:0]   newPC_o 
 );
 
     reg         regWriteR;
@@ -46,14 +46,19 @@ module writeback(
         pcPlus4R    <= pcPlus4_i;
     end  
 
-    wire [31:0] resultW = wdSrcR ? aluResultR : immUR;
+    wire [31:0] resultW = wdSrcR ? immUR : aluResultR;
     wire [31:0] newPCW = ( ~(aluZeroR ^ condZeroR) & branchR ) ? pcBranchR : pcPlus4R;
 
-    always @ (negedge clk) begin
-        regWrite_o  <= regWriteR;
-        rd_o        <= rdR;
-        result_o    <= resultW;
-        newPC_o     <= newPCW;
-    end  
+    // always @ (negedge clk) begin
+    //     regWrite_o  <= regWriteR;
+    //     rd_o        <= rdR;
+    //     result_o    <= resultW;
+    //     newPC_o     <= newPCW;
+    // end 
+
+    assign regWrite_o  = regWriteR;
+    assign rd_o        = rdR;
+    assign result_o    = resultW;
+    assign newPC_o     = newPCW; 
 
 endmodule

@@ -74,7 +74,6 @@ module sr_cpu
 
     fetch fetch(
         .clk(clk),
-        .freeze(freeze),
         .pc_i(pc_f),
         .instr_o(instr_fd),
         .pc_o(pc_fd),
@@ -83,6 +82,7 @@ module sr_cpu
 
     decode decode(
         .clk(clk),
+        .freeze(freeze),
         .instr_i(instr_fd),
         .pc_i(pc_fd),
         .pcPlus4_i(pcPlus4_fd),
@@ -282,11 +282,12 @@ module conflict_prevention
                             end
                             else pcTarget <= pcPlus4;
                         end
-                2'b01 : state <= 2;
+                2'b01 : state <= 3;
                 2'b10 : state <= 3;
                 2'b11 : begin 
                             state <= 0;
-                            freeze <= 1;
+                            freeze <= 0;
+                            pcTarget <= pcBranch;
                         end
             endcase    
     end    
@@ -295,7 +296,7 @@ module conflict_prevention
     // assign pcBranch = init == 2'b00 ? 32'b1 : 32'b0;
 
     //data conflict
-    assign srcA = (rs1 == rd1 && regWrite) ? (wdSrc ? aluResult : immU) : rd1;
-    assign srcB = (rs2 == rd2 && regWrite) ? (wdSrc ? aluResult : immU) : rd2;
+    assign srcA = (rs1 == rd && regWrite) ? (wdSrc ? immU : aluResult) : rd1;
+    assign srcB = (rs2 == rd && regWrite) ? (wdSrc ? immU : aluResult) : rd2;
 
 endmodule

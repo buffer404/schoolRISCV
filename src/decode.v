@@ -6,22 +6,23 @@ module decode(
     input      [31:0] instr_i,
     input      [31:0] pc_i,
     input      [31:0] pcPlus4_i,
+    input               freeze,
 
-    output reg        wdSrc_o,
-    output reg        regWrite_o,
+    output        wdSrc_o,
+    output        regWrite_o,
     output            branch_o,
-    output reg [2:0]  aluControl_o,
-    output reg        aluSrc_o,
-    output reg        condZero_o,
+    output [2:0]  aluControl_o,
+    output        aluSrc_o,
+    output        condZero_o,
 
-    output reg [ 4:0] rs1_o,
-    output reg [ 4:0] rs2_o,
-    output reg [ 4:0] rd_o,
-    output reg [31:0] immI_o,
-    output reg [31:0] immU_o,
+    output [ 4:0] rs1_o,
+    output [ 4:0] rs2_o,
+    output [ 4:0] rd_o,
+    output [31:0] immI_o,
+    output [31:0] immU_o,
 
-    output reg [31:0] pcBranch_o,
-    output reg [31:0] pcPlus4_o
+    output [31:0] pcBranch_o,
+    output [31:0] pcPlus4_o
 );
    
 
@@ -76,27 +77,49 @@ module decode(
     );
 
     always @ (posedge clk) begin
-        instrR      <= instr_i;
-        pcR         <= pc_i;
-        pcPlus4R    <= pcPlus4_i;
+        if(freeze) begin
+            instrR      <= 32'bx;
+            pcR         <= 32'bx;
+            pcPlus4R    <= 32'bx;
+        end
+        else begin
+            instrR      <= instr_i;
+            pcR         <= pc_i;
+            pcPlus4R    <= pcPlus4_i;
+        end         
     end    
 
-    always @ (negedge clk) begin
-        wdSrc_o         <= wdSrcW;
-        regWrite_o      <= regWriteW;
-        aluControl_o    <= aluControlW;
-        aluSrc_o        <= aluSrcW;
-        condZero_o      <= condZeroW;
+    // always @ (negedge clk) begin
+    //     wdSrc_o         <= wdSrcW;
+    //     regWrite_o      <= regWriteW;
+    //     aluControl_o    <= aluControlW;
+    //     aluSrc_o        <= aluSrcW;
+    //     condZero_o      <= condZeroW;
 
-        rs1_o           <= rs1W;
-        rs2_o           <= rs2W;
-        rd_o            <= rdW;
-        immI_o          <= immIW;
-        immU_o          <= immUW;
+    //     rs1_o           <= rs1W;
+    //     rs2_o           <= rs2W;
+    //     rd_o            <= rdW;
+    //     immI_o          <= immIW;
+    //     immU_o          <= immUW;
 
-        pcBranch_o      <= immBW + pcR;
-        pcPlus4_o       <= pcPlus4R;
-    end   
+    //     pcBranch_o      <= immBW + pcR;
+    //     pcPlus4_o       <= pcPlus4R;
+    // end   
+
+    assign wdSrc_o       = wdSrcW;
+    assign regWrite_o    = regWriteW;
+    assign aluControl_o  = aluControlW;
+    assign aluSrc_o      = aluSrcW;
+    assign condZero_o    = condZeroW;
+
+    assign rs1_o         = rs1W;
+    assign rs2_o         = rs2W;
+    assign rd_o          = rdW;
+    assign immI_o        = immIW;
+    assign immU_o        = immUW;
+
+    assign pcBranch_o    = immBW + pcR;
+    assign pcPlus4_o     = pcPlus4R;
 
 endmodule
 

@@ -1,0 +1,2 @@
+lui a0, , 0x0
+addi a0, a0, 0x1
