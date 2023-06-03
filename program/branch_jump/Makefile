@@ -7,3 +7,5 @@ program.hex: main.asm
 
 clear:
 	rm program.hex
+
+

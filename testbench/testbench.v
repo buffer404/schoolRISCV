@@ -79,7 +79,7 @@ module sm_testbench;
     begin
         cmdOp = sm_top.sm_cpu.decode.cmdOpW;
         rd    = sm_top.sm_cpu.decode.rd_o;
-        cmdF3 = sm_top.sm_cpu.decode.cmdOpW;
+        cmdF3 = sm_top.sm_cpu.decode.cmdF3W;
         rs1   = sm_top.sm_cpu.decode.rs1W;
         rs2   = sm_top.sm_cpu.decode.rs2W;
         cmdF7 = sm_top.sm_cpu.decode.cmdF7W;
@@ -87,7 +87,7 @@ module sm_testbench;
         immB  = sm_top.sm_cpu.decode.immBW;
         immU  = sm_top.sm_cpu.decode.immU_o;
 
-        $write("  $%1d  ",cmdOp);
+        //$write(" Opcode $%b , cmdf3 $%b , cmdf7 $%b ",cmdOp, cmdF3, cmdF7);
         casez( { cmdF7, cmdF3, cmdOp } )
             default :                                $write ("new/unknown");
             { `RVF7_ADD,  `RVF3_ADD,  `RVOP_ADD  } : $write ("add   $%1d, $%1d, $%1d", rd, rs1, rs2);
@@ -111,8 +111,8 @@ module sm_testbench;
 
     always @ (posedge clk)
     begin
-        $write ("%5d  pc = %2h instr = %h   a0 = %1d", 
-                  cycle, sm_top.sm_cpu.fetch.pc_o, sm_top.sm_cpu.fetch.instr_o, sm_top.sm_cpu.sm_register_file.rf[10]);
+        $write ("%5d  pc = %2h instr = %h a0 = 0x%8h a1 = 0x%8h   :   ", 
+                  cycle, sm_top.sm_cpu.fetch.pc_o, sm_top.sm_cpu.fetch.instr_o, sm_top.sm_cpu.sm_register_file.rf[10], sm_top.sm_cpu.sm_register_file.rf[11]);
 
         disasmInstr();
 

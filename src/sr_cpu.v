@@ -66,9 +66,6 @@ module sr_cpu
     wire [31:0] pcPlus4_ew;
 
     //writeback wires
-    wire        regWrite_wf;
-    wire [ 4:0] rd_wf;
-    wire [31:0] result_wf;
 
     wire freeze;
 
@@ -141,11 +138,6 @@ module sr_cpu
     writeback writeback(
 
         .clk(clk),
-        .regWrite_i(regWrite_ew),
-        .wdSrc_i(wdSrc_ew),
-        .rd_i(rd_ew),
-        .immU_i(immU_ew),  
-        .aluResult_i(aluResult_ew),
 
         .aluZero_i(aluZero_ew),
         .condZero_i(condZero_ew),                 
@@ -154,22 +146,23 @@ module sr_cpu
         .pcBranch_i(pcBranch_ew),
         .pcPlus4_i(pcPlus4_ew),
 
-        .regWrite_o(regWrite_wf),
-        .rd_o(rd_wf),     
-        .result_o(result_wf),
         .newPC_o(pc_w)
 
     );
 
     sm_register_file sm_register_file(
         .clk(clk),
+
+        .wdSrc(wdSrc_ew),
+        .immU(immU_ew),
+        .aluResult(aluResult_ew),
+
         .a1(rs1_de),
         .a2(rs2_de),
-        .a3(rd_wf),
+        .a3(rd_ew),
         .rd1(rd1),
         .rd2(rd2),
-        .wd3(result_wf),
-        .we3(regWrite_wf)
+        .we3(regWrite_ew)
     );  
 
 
@@ -206,21 +199,29 @@ endmodule
 module sm_register_file
 (
     input         clk,
+
+    input       wdSrc,
+    input [31:0] immU,
+    input [31:0] aluResult,
+
     input  [ 4:0] a1,
     input  [ 4:0] a2,
     input  [ 4:0] a3,
     output [31:0] rd1,
     output [31:0] rd2,
-    input  [31:0] wd3,
     input         we3
 );
     reg [31:0] rf [31:0];
 
-    assign rd1 = (a1 != 0) ? rf [a1] : 32'b0;
-    assign rd2 = (a2 != 0) ? rf [a2] : 32'b0;
+    wire [31:0] wd3 = wdSrc ? immU : aluResult;
 
-    always @ (posedge clk)
+    assign rd1 = (a1 != 5'b0) ? rf [a1] : 32'b0;
+    assign rd2 = (a2 != 5'b0) ? rf [a2] : 32'b0;
+
+    always @ (negedge clk) begin
         if(we3) rf [a3] <= wd3;
+    end    
+
 endmodule
 
 module conflict_prevention
