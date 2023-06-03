@@ -78,33 +78,16 @@ module decode(
 
     always @ (posedge clk) begin
         if(freeze) begin
-            instrR      <= 32'bx;
-            pcR         <= 32'bx;
-            pcPlus4R    <= 32'bx;
+            instrR      <= 32'h13;
+            pcR         <= 32'b0;
+            pcPlus4R    <= 32'b0;
         end
         else begin
             instrR      <= instr_i;
             pcR         <= pc_i;
             pcPlus4R    <= pcPlus4_i;
         end         
-    end    
-
-    // always @ (negedge clk) begin
-    //     wdSrc_o         <= wdSrcW;
-    //     regWrite_o      <= regWriteW;
-    //     aluControl_o    <= aluControlW;
-    //     aluSrc_o        <= aluSrcW;
-    //     condZero_o      <= condZeroW;
-
-    //     rs1_o           <= rs1W;
-    //     rs2_o           <= rs2W;
-    //     rd_o            <= rdW;
-    //     immI_o          <= immIW;
-    //     immU_o          <= immUW;
-
-    //     pcBranch_o      <= immBW + pcR;
-    //     pcPlus4_o       <= pcPlus4R;
-    // end   
+    end     
 
     assign wdSrc_o       = wdSrcW;
     assign regWrite_o    = regWriteW;

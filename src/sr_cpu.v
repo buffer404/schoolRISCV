@@ -283,12 +283,15 @@ module conflict_prevention
                             end
                             else pcTarget <= pcPlus4;
                         end
-                2'b01 : state <= 3;
-                2'b10 : state <= 3;
+                2'b01 : state <= 2;
+                2'b10 : begin 
+                            pcTarget <= pcBranch;
+                            state <= 3;
+                        end
                 2'b11 : begin 
                             state <= 0;
                             freeze <= 0;
-                            pcTarget <= pcBranch;
+                            pcTarget <= pcPlus4;
                         end
             endcase    
     end    
