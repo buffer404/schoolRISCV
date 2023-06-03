@@ -13,7 +13,7 @@
 `include "sr_cpu.vh"
 
 `ifndef SIMULATION_CYCLES
-    `define SIMULATION_CYCLES 15
+    `define SIMULATION_CYCLES 20
 `endif
 
 module sm_testbench;
@@ -87,6 +87,9 @@ module sm_testbench;
         immB  = sm_top.sm_cpu.decode.immBW;
         immU  = sm_top.sm_cpu.decode.immU_o;
 
+        if (cmdF3 == `RVF3_ADDI && cmdOp == `RVOP_ADDI && rs1 == 0 && rs2 == 0) $write ("nop");
+        else
+
         //$write(" Opcode $%b , cmdf3 $%b , cmdf7 $%b ",cmdOp, cmdF3, cmdF7);
         casez( { cmdF7, cmdF3, cmdOp } )
             default :                                $write ("new/unknown");
@@ -101,7 +104,9 @@ module sm_testbench;
 
             { `RVF7_ANY,  `RVF3_BEQ,  `RVOP_BEQ  } : $write ("beq   $%1d, $%1d, 0x%8h (%1d)", rs1, rs2, immB, immB);
             { `RVF7_ANY,  `RVF3_BNE,  `RVOP_BNE  } : $write ("bne   $%1d, $%1d, 0x%8h (%1d)", rs1, rs2, immB, immB);
+            { `RVF7_ANY,  `RVF3_BGE,  `RVOP_BGE  } : $write ("bge   $%1d, $%1d, 0x%8h (%1d)", rs1, rs2, immB, immB);
         endcase
+
     end
     endtask
 
@@ -111,8 +116,12 @@ module sm_testbench;
 
     always @ (posedge clk)
     begin
-        $write ("%5d  pc = %2h instr = %h a0 = 0x%8h a1 = 0x%8h   :   ", 
-                  cycle, sm_top.sm_cpu.fetch.pc_o, sm_top.sm_cpu.fetch.instr_o, sm_top.sm_cpu.sm_register_file.rf[10], sm_top.sm_cpu.sm_register_file.rf[11]);
+        $write ("%5d  pc = %2h ", cycle, sm_top.sm_cpu.fetch.pc_o);
+
+        if (sm_top.sm_cpu.fetch.instr_o !== 32'bX) $write("instr = %h ", sm_top.sm_cpu.fetch.instr_o);
+        else $write("instr = 00000013 ");
+
+        $write ("a0 = 0x%8h a1 = 0x%8h   :   ",sm_top.sm_cpu.sm_register_file.rf[10], sm_top.sm_cpu.sm_register_file.rf[11]);
 
         disasmInstr();
 

@@ -34,6 +34,7 @@ module sr_cpu
     wire [2:0]  aluControl_de;
     wire        aluSrc_de;
     wire        condZero_de;
+    wire        bge_de;
 
     wire [ 4:0] rs1_de;
     wire [ 4:0] rs2_de;
@@ -56,6 +57,8 @@ module sr_cpu
     wire        branch_ew;
     wire        condZero_ew;
     wire        aluZero_ew;
+    wire        aluNeg_ew;   
+    wire        bge_ew; 
 
     wire [31:0] aluResult_ew;
 
@@ -90,6 +93,7 @@ module sr_cpu
         .aluControl_o(aluControl_de),
         .aluSrc_o(aluSrc_de),
         .condZero_o(condZero_de),
+        .bge_o(bge_de),
 
         .rs1_o(rs1_de),
         .rs2_o(rs2_de),
@@ -108,6 +112,7 @@ module sr_cpu
         .regWrite_i(regWrite_de),
         .branch_i(branch_de),
         .condZero_i(condZero_de),
+        .bge_i(bge_de),
         .aluControl_i(aluControl_de),
         .aluSrc_i(aluSrc_de),
 
@@ -125,6 +130,8 @@ module sr_cpu
         .branch_o(branch_ew),
         .condZero_o(condZero_ew),
         .aluZero_o(aluZero_ew),
+        .aluNeg_o(aluNeg_ew),
+        .bge_o(bge_ew),
 
         .aluResult_o(aluResult_ew),
 
@@ -140,8 +147,10 @@ module sr_cpu
         .clk(clk),
 
         .aluZero_i(aluZero_ew),
+        .aluNeg_i(aluNeg_ew),
         .condZero_i(condZero_ew),                 
         .branch_i(branch_ew),
+        .bge_i(bge_ew),
 
         .pcBranch_i(pcBranch_ew),
         .pcPlus4_i(pcPlus4_ew),

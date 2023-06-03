@@ -14,6 +14,7 @@ module decode(
     output [2:0]  aluControl_o,
     output        aluSrc_o,
     output        condZero_o,
+    output        bge_o,
 
     output [ 4:0] rs1_o,
     output [ 4:0] rs2_o,
@@ -61,6 +62,7 @@ module decode(
     wire       wdSrcW;
     wire [2:0] aluControlW;
     wire       condZeroW;
+    wire       bgeW;
 
     //control
     sr_control sm_control (
@@ -73,7 +75,8 @@ module decode(
         .branch     ( branch_o       ),
         .aluControl ( aluControlW   ),
         .aluSrc     ( aluSrcW       ),
-        .condZero   ( condZeroW     )
+        .condZero   ( condZeroW     ),
+        .bge        ( bgeW          )
     );
 
     always @ (posedge clk) begin
@@ -94,6 +97,7 @@ module decode(
     assign aluControl_o  = aluControlW;
     assign aluSrc_o      = aluSrcW;
     assign condZero_o    = condZeroW;
+    assign bge_o         = bgeW;
 
     assign rs1_o         = rs1W;
     assign rs2_o         = rs2W;
@@ -160,7 +164,8 @@ module sr_control
     output reg        branch,
     output reg [2:0]  aluControl,
     output reg        aluSrc,
-    output reg        condZero
+    output reg        condZero,
+    output reg        bge
 );
 
     always @ (*) begin
@@ -169,6 +174,7 @@ module sr_control
         regWrite    = 1'b0;
         aluSrc      = 1'b0;
         wdSrc       = 1'b0;
+        bge         = 1'b0;
         aluControl  = `ALU_ADD;
 
         casez( {cmdF7, cmdF3, cmdOp} )
@@ -183,6 +189,7 @@ module sr_control
 
             { `RVF7_ANY,  `RVF3_BEQ,  `RVOP_BEQ  } : begin branch = 1'b1; condZero = 1'b1; aluControl = `ALU_SUB; end
             { `RVF7_ANY,  `RVF3_BNE,  `RVOP_BNE  } : begin branch = 1'b1; aluControl = `ALU_SUB; end
+            { `RVF7_ANY,  `RVF3_BGE,  `RVOP_BGE  } : begin branch = 1'b1; aluControl = `ALU_SUB; bge = 1'b1; end
         endcase
     end
 endmodule

@@ -7,6 +7,7 @@ module execute(
     input               regWrite_i,
     input               branch_i,
     input               condZero_i,
+    input               bge_i,
     input [ 2:0]        aluControl_i,
     input               aluSrc_i,
 
@@ -24,7 +25,9 @@ module execute(
     output          branch_o,
     output          condZero_o,
     output          aluZero_o,
+    output          aluNeg_o,
     output [31:0]   aluResult_o,
+    output          bge_o,
 
     output [ 4:0]   rd_o,
     output [31:0]   immU_o,    
@@ -37,6 +40,7 @@ module execute(
     reg         regWriteR;
     reg         branchR;
     reg         condZeroR;
+    reg         bgeR;
     reg [ 2:0]  aluControlR;
     reg         aluSrcR;
 
@@ -53,6 +57,7 @@ module execute(
     wire [31:0] aluSecondW = aluSrcR ? immIR : srcBR;
     wire [ 2:0] aluControlW = aluControlR;
     wire        aluZeroW;
+    wire        aluNegW;
     wire [31:0] aluResultW;
     
     sr_alu sr_alu(
@@ -60,6 +65,7 @@ module execute(
         .srcB(aluSecondW),
         .oper(aluControlW),
         .zero(aluZeroW),
+        .neg(aluNegW),
         .result(aluResultW)
     );
 
@@ -68,6 +74,7 @@ module execute(
         regWriteR   <= regWrite_i;
         branchR     <= branch_i;
         condZeroR   <= condZero_i;
+        bgeR        <= bge_i;
         aluControlR <= aluControl_i;
         aluSrcR     <= aluSrc_i;
         srcAR       <= srcA_i;
@@ -97,11 +104,13 @@ module execute(
     assign   branch_o    = branchR;
     assign   condZero_o  = condZeroR;
     assign   aluZero_o   = aluZeroW;
+    assign   aluNeg_o    = aluNegW;
     assign   aluResult_o = aluResultW;
     assign   rd_o        = rdR;
     assign   immU_o      = immUR;
     assign   pcBranch_o  = pcBranchR;
     assign   pcPlus4_o   = pcPlus4R;
+    assign   bge_o       = bgeR;
 
 
 endmodule
@@ -112,6 +121,7 @@ module sr_alu
     input  [31:0]     srcB,
     input  [ 2:0]     oper,
     output          zero,
+    output          neg,
     output  [31:0]  result
 );
 
@@ -128,6 +138,8 @@ module sr_alu
         endcase
     end
 
+    assign neg = (result < 0);
     assign zero = (result == 0);
     assign result = resultReg;
+
 endmodule
