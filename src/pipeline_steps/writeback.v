@@ -35,8 +35,6 @@ module writeback(
         pcPlus4R    <= pcPlus4_i;
     end  
 
-    //wire [31:0] newPCW = ( ~(aluZeroR ^ condZeroR) & branchR ) ? pcBranchR : pcPlus4R;
-
     wire bge = bgeR & aluNegR;
     wire beq = ~(aluZeroR ^ condZeroR);
     wire res = beq | bge;

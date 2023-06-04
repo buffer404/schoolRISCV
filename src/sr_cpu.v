@@ -51,6 +51,10 @@ module sr_cpu
     wire [31:0] rd1;
     wire [31:0] rd2;
 
+    wire [7:0]  A;
+    wire [7:0]  B;
+    wire        start_module;  
+
     //execute wires
     wire        wdSrc_ew;
     wire        regWrite_ew;
@@ -71,6 +75,7 @@ module sr_cpu
     //writeback wires
 
     wire freeze;
+    wire [4:0] rd_e;
 
     fetch fetch(
         .clk(clk),
@@ -102,7 +107,11 @@ module sr_cpu
         .immU_o(immU_de),
 
         .pcBranch_o(pcBranch_de),
-        .pcPlus4_o(pcPlus4_de)
+        .pcPlus4_o(pcPlus4_de),
+
+        .A_o(A),
+        .B_o(B),
+        .start_module_o(start_module)
     );
 
     execute execute(
@@ -118,7 +127,7 @@ module sr_cpu
 
         .srcA_i(srcA),
         .srcB_i(srcB),
-        .rd_i(rd_de),
+        .rd_i(rd_e),
         .immI_i(immI_de),
         .immU_i(immU_de),
 
@@ -174,7 +183,6 @@ module sr_cpu
         .we3(regWrite_ew)
     );  
 
-
     conflict_prevention conflict_prevention(
         .clk(clk),
         .start_pc(imAddr),
@@ -190,6 +198,7 @@ module sr_cpu
         .immU(immU_ew),
         .wdSrc(wdSrc_ew),
         .rd(rd_ew),
+        .rd_de(rd_de),
 
         .freeze(freeze),
         .branch(branch_de),
@@ -199,7 +208,12 @@ module sr_cpu
 
         .pcTarget(pc_f),
         .srcA(srcA),
-        .srcB(srcB)
+        .srcB(srcB),
+        .rd_o(rd_e),
+
+        .A(A),
+        .B(B),
+        .start_module   (start_module)
     );
 
 
@@ -250,28 +264,33 @@ module conflict_prevention
     input [31:0]    immU,
     input           wdSrc,
     input [ 4:0]    rd,
+    input [ 4:0]    rd_de,
 
     input           branch,
     input [31:0]    pcBranch,
     input [31:0]    pcPlus4,
 
+    input           start_module,
+    input [7:0]     A,
+    input [7:0]     B,
+
     output reg          freeze,
     output reg [31:0]   pcTarget,
 
-    output [31:0]   srcA,
-    output [31:0]   srcB
+    output [31:0]       srcA,
+    output [31:0]       srcB,
+    output [4:0]        rd_o
 );
 
     reg [1:0] state = 2'b0;
     reg [1:0] start = 2'b11;
 
-    initial begin
-            freeze <= 0;
-            pcTarget <= 32'b0;
-    end
-
+    
+    // control conflict
     always @ (negedge clk) begin
         if (start == 3 ) begin
+            freeze <= 0;
+            pcTarget <= 32'b0;
             start <= 2;
         end  
         else if (start == 2) begin
@@ -279,10 +298,6 @@ module conflict_prevention
             pcTarget <= pcPlus4;
             start <= 1;
         end   
-        // else if (start == 1) begin
-        //     pcTarget <= pcPlus4;
-        //     start <= 0;
-        // end
         else 
             case (state)
                 2'b00 : begin
@@ -290,6 +305,7 @@ module conflict_prevention
                                 state <= 1;
                                 freeze <= 1;
                             end
+                            else if (freeze) pcTarget <= pcPlus4 - 4;
                             else pcTarget <= pcPlus4;
                         end
                 2'b01 : state <= 2;
@@ -305,11 +321,42 @@ module conflict_prevention
             endcase    
     end    
 
-    //assign pcTarget = !init ? (branch ? state === 2'b11 ? pcBranch : 32'bx : pcPlus4) : init == 2'b01 ? pcPlus4 : 32'b0;
-    // assign pcBranch = init == 2'b00 ? 32'b1 : 32'b0;
+    wire busyW;
+    wire [23:0] func_resW;
+    reg busy = 0;
+    reg [4:0] rdR = 0;
+    wire [4:0] rdW = rdR;
 
     //data conflict
-    assign srcA = (rs1 == rd && regWrite) ? (wdSrc ? immU : aluResult) : rd1;
-    assign srcB = (rs2 == rd && regWrite) ? (wdSrc ? immU : aluResult) : rd2;
+    assign srcA = (!busyW && busy) ? func_resW : (rs1 == rd && regWrite) ? (wdSrc ? immU : aluResult) : rd1;
+    assign srcB = (!busyW && busy) ? 32'b0 : (rs2 == rd && regWrite) ? (wdSrc ? immU : aluResult) : rd2;
+    assign rd_o = (!busyW && busy) ? rdW : rd_de;
+
+
+    // func logic 
+    always @ (negedge clk) begin
+        if (start_module) begin
+            busy <= 1;
+            freeze <= 1;
+            rdR <= rd_de;
+        end    
+        else if (!busyW && busy && freeze) begin
+            freeze <= 0;
+        end    
+        else if (!busyW && busy && !freeze) begin
+            busy <= 0;
+        end  
+    end    
+
+    my_func my_func(
+        .clk_i(clk),
+        .rst_i(rst),
+        .a_i(A),
+        .b_i(B),
+        .start_i(start_module),
+
+        .y_o(func_resW),
+        .busy(busyW)
+    );
 
 endmodule

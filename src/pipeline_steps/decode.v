@@ -1,29 +1,33 @@
 `include "sr_cpu.vh"
 
 module decode(
-    input             clk,
+    input               clk,
     
-    input      [31:0] instr_i,
-    input      [31:0] pc_i,
-    input      [31:0] pcPlus4_i,
+    input      [31:0]   instr_i,
+    input      [31:0]   pc_i,
+    input      [31:0]   pcPlus4_i,
     input               freeze,
 
-    output        wdSrc_o,
-    output        regWrite_o,
-    output            branch_o,
-    output [2:0]  aluControl_o,
-    output        aluSrc_o,
-    output        condZero_o,
-    output        bge_o,
+    output              wdSrc_o,
+    output              regWrite_o,
+    output              branch_o,
+    output [2:0]        aluControl_o,
+    output              aluSrc_o,
+    output              condZero_o,
+    output              bge_o,
 
-    output [ 4:0] rs1_o,
-    output [ 4:0] rs2_o,
-    output [ 4:0] rd_o,
-    output [31:0] immI_o,
-    output [31:0] immU_o,
+    output [ 4:0]       rs1_o,
+    output [ 4:0]       rs2_o,
+    output [ 4:0]       rd_o,
+    output [31:0]       immI_o,
+    output [31:0]       immU_o,
 
-    output [31:0] pcBranch_o,
-    output [31:0] pcPlus4_o
+    output [31:0]       pcBranch_o,
+    output [31:0]       pcPlus4_o,
+
+    output [7:0]        A_o,
+    output [7:0]        B_o,
+    output              start_module_o
 );
    
 
@@ -108,6 +112,13 @@ module decode(
     assign pcBranch_o    = immBW + pcR;
     assign pcPlus4_o     = pcPlus4R;
 
+    assign A_o           = (instrR[6:0] == 7'b1111111) ?  (instrR[19:12]) : (8'b0);
+    assign B_o           = (instrR[6:0] == 7'b1111111) ?  (instrR[27:20]) : (8'b0);
+    assign start_module_o= (instrR[6:0] == 7'b1111111) ?  (1'b1) : (1'b0);
+
+
+
+
 endmodule
 
 module sr_decode
@@ -190,6 +201,8 @@ module sr_control
             { `RVF7_ANY,  `RVF3_BEQ,  `RVOP_BEQ  } : begin branch = 1'b1; condZero = 1'b1; aluControl = `ALU_SUB; end
             { `RVF7_ANY,  `RVF3_BNE,  `RVOP_BNE  } : begin branch = 1'b1; aluControl = `ALU_SUB; end
             { `RVF7_ANY,  `RVF3_BGE,  `RVOP_BGE  } : begin branch = 1'b1; aluControl = `ALU_SUB; bge = 1'b1; end
+
+            { `RVF7_ANY,  `RVF3_ANY,  `RVOP_FUNC  } : begin regWrite = 1'b1; aluControl = `ALU_ADD;  end
         endcase
     end
 endmodule

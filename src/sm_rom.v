@@ -21,7 +21,7 @@ module sm_rom
     assign rd = rom [shift];
 
     initial begin
-        $readmemh ("/home/leonid/Desktop/schoolRISCV-pipeline/program/bge_test/program.hex", rom);
+        $readmemh ("/home/leonid/Desktop/schoolRISCV-pipeline/program/func_test/program.hex", rom);
     end
 
 endmodule

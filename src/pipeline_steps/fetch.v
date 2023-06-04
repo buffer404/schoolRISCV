@@ -24,12 +24,5 @@ module fetch(
     assign pc_o = pcR;
     assign pcPlus4_o = pcR + 4;
 
-    // always @ (negedge clk) begin
-    //     if (!freeze) begin
-    //         instr_o <= dataW;
-    //         pc_o <= pcR;
-    //         pcPlus4_o <= pcR + 4;    
-    //     end    
-    // end  
 
 endmodule

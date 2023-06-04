@@ -86,19 +86,6 @@ module execute(
         pcPlus4R    <= pcPlus4_i;
     end    
 
-    // always @ (negedge clk) begin
-    //     wdSrc_o     <= wdSrcR;
-    //     regWrite_o  <= regWriteR;
-    //     branch_o    <= branchR;
-    //     condZero_o  <= condZeroR;
-    //     aluZero_o   <= aluZeroW;
-    //     aluResult_o <= aluResultW;
-    //     rd_o        <= rdR;
-    //     immU_o      <= immUR;
-    //     pcBranch_o  <= pcBranchR;
-    //     pcPlus4_o   <= pcPlus4R;
-    // end 
-
     assign   wdSrc_o     = wdSrcR;
     assign   regWrite_o  = regWriteR;
     assign   branch_o    = branchR;

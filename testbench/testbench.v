@@ -13,7 +13,7 @@
 `include "sr_cpu.vh"
 
 `ifndef SIMULATION_CYCLES
-    `define SIMULATION_CYCLES 20
+    `define SIMULATION_CYCLES 7000
 `endif
 
 module sm_testbench;
@@ -105,6 +105,8 @@ module sm_testbench;
             { `RVF7_ANY,  `RVF3_BEQ,  `RVOP_BEQ  } : $write ("beq   $%1d, $%1d, 0x%8h (%1d)", rs1, rs2, immB, immB);
             { `RVF7_ANY,  `RVF3_BNE,  `RVOP_BNE  } : $write ("bne   $%1d, $%1d, 0x%8h (%1d)", rs1, rs2, immB, immB);
             { `RVF7_ANY,  `RVF3_BGE,  `RVOP_BGE  } : $write ("bge   $%1d, $%1d, 0x%8h (%1d)", rs1, rs2, immB, immB);
+
+            { `RVF7_ANY,  `RVF3_ANY,  `RVOP_FUNC  } : $write ("func   $%1d, $%b, $%b", rd, sm_top.sm_cpu.decode.instrR[19:12], sm_top.sm_cpu.decode.instrR[27:20]);
         endcase
 
     end
@@ -114,6 +116,7 @@ module sm_testbench;
     //simulation debug output
     integer cycle; initial cycle = 0;
 
+    reg finish = 0;
     always @ (posedge clk)
     begin
         $write ("%5d  pc = %2h ", cycle, sm_top.sm_cpu.fetch.pc_o);
@@ -129,12 +132,16 @@ module sm_testbench;
 
         cycle = cycle + 1;
 
-        if (cycle > `SIMULATION_CYCLES)
+
+        if ((sm_top.sm_cpu.fetch.instr_o === 32'bX) && (sm_top.sm_cpu.fetch.pc_o !== 32'bX) && !sm_top.sm_cpu.conflict_prevention.freeze)
         begin
-            cycle = 0;
-            $display ("Timeout");
-            $stop;
+            if (finish) begin
+                $display ("    The program has finished execution!");
+                $stop;
+            end  
+            finish <= 1;
         end
+        
     end
 
 endmodule
